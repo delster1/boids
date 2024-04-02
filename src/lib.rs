@@ -1,7 +1,9 @@
 mod utils;
-
+extern crate log;
 use wasm_bindgen::prelude::*;
 use std::fmt;
+extern crate js_sys;    
+extern crate web_sys;
 use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen]
@@ -9,6 +11,12 @@ extern "C" {
     fn alert(s: &str);
 }
 
+#[macro_export]
+macro_rules! log {
+    ( $( $t:tt )* ) => {
+        web_sys::console::log_1(&format!( $( $t )* ).into());
+    }
+}
 #[wasm_bindgen]
 pub fn greet() {
     alert("Hello, boids!");
@@ -25,12 +33,22 @@ impl fmt::Display for Universe {
         Ok(())
     }
 }
+#[repr(C)]
+#[derive(Clone, Copy, Debug)]
+#[wasm_bindgen]
+pub struct Pixel {
+    Red : u8,
+    Green : u8,
+    Blue : u8,
+    Alpha : u8
+}
 #[wasm_bindgen]
 pub struct Universe {
     width: u32,
     height: u32,
-    pixels: Vec<u8>
+    pixels: Vec<Pixel>
 }
+#[wasm_bindgen]
 
 impl Universe {
     fn get_index(&mut self, row : u32, col : u32) -> usize {
@@ -44,7 +62,7 @@ impl Universe {
     pub fn height(&self) -> u32 {
         self.height
     }
-    pub fn pixels(&self) -> *const u8 {
+    pub fn pixels(&self) -> *const Pixel {
         self.pixels.as_ptr()
     }
     pub fn tick(&mut self) {
@@ -63,12 +81,12 @@ impl Universe {
     pub fn new() -> Universe {
         utils::set_panic_hook();
 
-        let width = 600;
-        let height = 400;
+        let width = 800;
+        let height = 800;
 
         let pixels = (0..width * height)
-            .map(|i| {
-                0
+            .map(|_i| Pixel {
+                Red: 0, Green: 0, Blue:  0,Alpha:  255
             }).collect();
         
 
