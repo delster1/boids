@@ -1,6 +1,7 @@
 mod utils;
 mod universe;
 mod pixel;
+mod boid;
 use wasm_bindgen::prelude::*;
 pub use universe::Universe;
 extern crate js_sys;
