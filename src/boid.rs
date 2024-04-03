@@ -4,23 +4,38 @@ use wasm_bindgen::prelude::*;
 use crate::log;
 use crate::utils;
 #[repr(C)]
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 #[wasm_bindgen]
 pub struct Boid {
     pub x: u32,
     pub y: u32,
     pub vx: f64,
     pub vy: f64,
-    max_speed: f64,
-    separation: f64,
-    alignment: f64,
-    cohesion: f64
-
+    
+    
 
 }
 
 impl Boid{
-    pub fn update_position(&mut self) {
+    
+    fn calculate_distance(&mut self, other : Boid) -> f64{
+        let x_dist = ((self.x - other.x) as f32).abs().powf(2.0);
+        let y_dist = ((self.y - other.y) as f32).abs().powf(2.0);
+
+        let diff = (x_dist + y_dist) as f64;
+        js_sys::Math::sqrt(diff)
+    }
+    fn find_close_boids(&mut self, boids : &Vec<Boid>) -> Vec<Boid>{
+        let mut next_boids: Vec<Boid> = vec!();
+        for (i, boid) in boids.iter().enumerate() {
+            let distance : f64  = self.calculate_distance(*boid);
+            if distance < 200.0 && self != boid {
+                next_boids.push(boid.clone());
+            }
+        }
+        next_boids
+    }
+    pub fn update_position(&mut self, MAX_SPEED : f64,  SEPARATION : f64, ALIGNMENT : f64, COHESION : f64, boids : &Vec<Boid>) {
         // Update the boid's position based on its velocity
         // Since x and y are u32, we need to round the result of the addition
         self.x = (self.x as f64 + self.vx).round() as u32;
@@ -44,5 +59,7 @@ impl Boid{
         } else if self.y == 0 && self.vy < 0.0 {
             self.y = max_height - 1;
         }
+        let close_boids = self.find_close_boids(&boids);
+        log!("close:{:?}", close_boids);
     }
 }

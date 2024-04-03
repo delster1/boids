@@ -1,9 +1,14 @@
 use crate::pixel::{Pixel};
 use crate::boid::Boid;
-use std::fmt;
+use std::fmt::{self, Alignment};
 use wasm_bindgen::prelude::*;
 use crate::log;
 use crate::utils;
+
+static MAX_SPEED : f64 = 50.0;
+static SEPARATION : f64 = 5.0;
+static ALIGNMENT : f64 = 1.0;
+static COHESION : f64 = 1.0;
 #[wasm_bindgen]
 pub struct Universe {
     width: u32,
@@ -29,11 +34,8 @@ impl Universe {
     pub fn pixels(&self) -> *const Pixel {
         self.pixels.as_ptr()
     }
-    pub fn update_boid_positions(&mut self) {
-        for boid in &mut self.boids {
-            boid.update_position();
-        }
-    }
+
+ 
     fn draw_boid(&mut self, boid: &Boid, pixels: &mut Vec<Pixel>, pixel_color: Pixel) {
         let idx = self.get_index(boid.y, boid.x);
         pixels[idx] = pixel_color; // Central pixel
@@ -61,14 +63,14 @@ impl Universe {
         let empty_pixel = Pixel {Red: 255, Green: 255, Blue: 255, Alpha: 255};
         let boid_pixel = Pixel {Red: 0, Green: 0, Blue: 0, Alpha: 255};
 
-        let mut boid_copy = self.boids.clone();
-        
-        for boid in &mut boid_copy {
-            self.draw_boid(&boid, &mut next, boid_pixel);
-            boid.update_position();
+        let mut boids_copy = self.boids.clone();
+
+        for boid in &mut boids_copy {
+            self.draw_boid(boid, &mut next, boid_pixel);
+            boid.update_position(MAX_SPEED, SEPARATION, ALIGNMENT, COHESION, &self.boids);
         }
 
-        self.boids = boid_copy;
+        self.boids = boids_copy;
         self.pixels = next;
     }
     pub fn new() -> Universe {
