@@ -5,10 +5,11 @@ use wasm_bindgen::prelude::*;
 use crate::log;
 use crate::utils;
 
-static MAX_SPEED : f64 = 50.0;
-static SEPARATION : f64 = 5.0;
-static ALIGNMENT : f64 = 1.0;
-static COHESION : f64 = 1.0;
+static MAX_SPEED : f32 = 6.0;
+static MIN_SPEED : f32 = 3.0;
+static SEPARATION : f32 = 0.05;
+static ALIGNMENT : f32 = 0.05;
+static COHESION : f32 = 0.0005;
 #[wasm_bindgen]
 pub struct Universe {
     width: u32,
@@ -37,22 +38,36 @@ impl Universe {
 
  
     fn draw_boid(&mut self, boid: &Boid, pixels: &mut Vec<Pixel>, pixel_color: Pixel) {
+        if boid.x >= self.width || boid.y >= self.height {
+            return; // Skip drawing if boid position is out of screen bounds
+        }
+            
         let idx = self.get_index(boid.y, boid.x);
         pixels[idx] = pixel_color; // Central pixel
 
         // Optional: draw a simple cross for visibility
-        // You can remove these if you find it's still inefficient or not necessary
-        if boid.x > 0 {
-            pixels[self.get_index(boid.y, boid.x - 1)] = pixel_color; // Left
+        // Draw to the left if there is space
+        if boid.x > 1 {
+            let left_idx = self.get_index(boid.y, boid.x - 1);
+            pixels[left_idx] = pixel_color;
         }
-        if boid.x < self.width - 1 {
-            pixels[self.get_index(boid.y, boid.x + 1)] = pixel_color; // Right
+
+        // Draw to the right if there is space
+        if boid.x + 1 < self.width {
+            let right_idx = self.get_index(boid.y, boid.x + 1);
+            pixels[right_idx] = pixel_color;
         }
-        if boid.y > 0 {
-            pixels[self.get_index(boid.y - 1, boid.x)] = pixel_color; // Up
+
+        // Draw above if there is space
+        if boid.y > 1 {
+            let up_idx = self.get_index(boid.y - 1, boid.x);
+            pixels[up_idx] = pixel_color;
         }
-        if boid.y < self.height - 1 {
-            pixels[self.get_index(boid.y + 1, boid.x)] = pixel_color; // Down
+
+        // Draw below if there is space
+        if boid.y + 1 < self.height {
+            let down_idx = self.get_index(boid.y + 1, boid.x);
+            pixels[down_idx] = pixel_color;
         }
     }
     pub fn tick(&mut self) {
@@ -67,7 +82,7 @@ impl Universe {
 
         for boid in &mut boids_copy {
             self.draw_boid(boid, &mut next, boid_pixel);
-            boid.update_position(MAX_SPEED, SEPARATION, ALIGNMENT, COHESION, &self.boids);
+            boid.update_position(MAX_SPEED, MIN_SPEED, SEPARATION, ALIGNMENT, COHESION, &self.boids);
         }
 
         self.boids = boids_copy;
@@ -84,8 +99,8 @@ impl Universe {
                 Red: 255, Green: 255, Blue:  255,Alpha:  255
         }).collect();
         
-        let mut boids = (0..5)
-            .map(|_i| Boid { x: {js_sys::Math::random() * 800.0} as u32, y: {js_sys::Math::random() * 800.0} as u32, vx: 1.0, vy: 1.0}
+        let mut boids = (0..300)
+            .map(|_i| Boid::new()
         ).collect();
 
         Universe {
